@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Prism Loop — Test Page</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --accent1:#7dd3fc;
+      --accent2:#a78bfa;
+      --card:#0b1220;
+      --glass: rgba(255,255,255,0.04);
+      --mono: #cbd5e1;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    body{
+      background:
+        radial-gradient(600px 300px at 10% 10%, rgba(167,139,250,0.08), transparent 10%),
+        radial-gradient(500px 250px at 90% 90%, rgba(125,211,252,0.06), transparent 10%),
+        var(--bg);
+      color:var(--mono);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+      box-sizing:border-box;
+    }
+    .card{
+      width:min(980px,96vw);
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;
+      padding:28px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+      display:grid;
+      grid-template-columns: 1fr 340px;
+      gap:20px;
+      align-items:start;
+    }
+    h1{margin:0 0 6px 0;font-size:28px;letter-spacing:-0.02em}
+    p.lead{margin:0 0 18px 0;color:#9fb0c8}
+    .meta{font-size:13px;color:#8aa0b8;margin-bottom:12px}
+    .host{font-weight:600;color:var(--accent1)}
+    .status{
+      display:inline-block;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,var(--accent1),var(--accent2));
+      color:#021025;font-weight:700;margin-left:8px;font-size:13px;
+    }
+
+    /* visualizer */
+    canvas{width:100%;height:160px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));display:block}
+
+    /* controls */
+    .controls{display:flex;gap:10px;flex-wrap:wrap}
+    button{
+      background:var(--glass);border:1px solid rgba(255,255,255,0.03);color:var(--mono);
+      padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600;
+    }
+    button.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#021025;border:none}
+    .samples{display:flex;flex-direction:column;gap:8px}
+    .sample{background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;cursor:pointer;border:1px dashed rgba(255,255,255,0.02)}
+    .sample:hover{transform:translateY(-3px);transition:transform .15s}
+
+    footer{grid-column:1/-1;margin-top:12px;color:#7f98ad;font-size:13px}
+
+    .controls .small { font-size:13px; padding:6px 10px; }
+    .note { color:#9fb0c8; font-size:13px; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <section>
+      <h1>Prism Loop — Test Page</h1>
+      <p class="lead">A tiny verification page: shows the site host, live clock, a visualizer, and a Speak‑and‑Spell–style synth you can play.</p>
+
+      <div class="meta">
+        Host: <span id="host" class="host">loading…</span>
+        <span id="liveStatus" class="status">Checking</span>
+      </div>
+
+      <canvas id="viz" width="800" height="160" aria-hidden="true"></canvas>
+
+      <div style="margin-top:12px" class="controls">
+        <button id="playTone" class="primary">Play Tone</button>
+        <button id="stopAll">Stop</button>
+        <button id="speakBtn" class="small">Speak: "PRISM LOOP"</button>
+        <button id="speakCustom" class="small">Speak Custom</button>
+        <input id="customText" placeholder="Type text (short)" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--mono);padding:6px 8px;border-radius:6px;">
+        <div style="margin-left:auto;color:#9fb0c8" id="clock">--:--:--</div>
+      </div>
+
+      <p class="note">Open the browser console to see runtime logs. The "Speak" buttons synthesize a lo‑fi robotic voice in the page using Web Audio.</p>
+    </section>
+
+    <aside>
+      <div style="margin-bottom:12px;font-weight:700">Mouse‑over samples</div>
+      <div class="samples" id="samples">
+        <div class="sample" data-freq="440">A4 — 440 Hz (hover)</div>
+        <div class="sample" data-freq="523.25">C5 — 523 Hz (hover)</div>
+        <div class="sample" data-freq="659.25">E5 — 659 Hz (hover)</div>
+        <div class="sample" data-freq="880">A5 — 880 Hz (hover)</div>
+      </div>
+
+      <div style="margin-top:18px;font-size:13px;color:#8aa0b8">
+        Quick checks:
+        <ul style="padding-left:18px;margin:8px 0 0 0">
+          <li>Hostname displays automatically</li>
+          <li>Clock updates every second</li>
+          <li>Play Tone toggles an oscillator and visualizer</li>
+          <li>Speak buttons synthesize a short robotic phrase</li>
+        </ul>
+      </div>
+    </aside>
+
+    <footer>Built for testing GitHub Pages deployment — if you see the host and the visualizer runs, your site is live.</footer>
+  </main>
+
+  <script>
+    // Host and clock
+    document.getElementById('host').textContent = location.hostname || 'unknown';
+    document.getElementById('liveStatus').textContent = 'Live';
+    function updateClock(){
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+    }
+    updateClock();
+    setInterval(updateClock,1000);
+
+    // Audio + visualizer setup
+    let audioCtx = null;
+    let analyser = null;
+    let masterGain = null;
+    let osc = null;
+    let rafId = null;
+
+    const canvas = document.getElementById('viz');
+    const ctx = canvas.getContext('2d');
+
+    function ensureAudio(){
+      if(!audioCtx){
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.12;
+        analyser.connect(masterGain);
+        masterGain.connect(audioCtx.destination);
+        console.log('AudioContext created', audioCtx.state);
+      }
+    }
+
+    function startTone(freq=220){
+      ensureAudio();
+      if(osc) return;
+      osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(analyser);
+      osc.start();
+      drawVisualizer();
+      console.log('Oscillator started at', freq);
+    }
+
+    function stopTone(){
+      if(osc){
+        try{osc.stop()}catch(e){}
+        osc.disconnect();
+        osc = null;
+      }
+      if(rafId){ cancelAnimationFrame(rafId); rafId = null; clearCanvas(); }
+      console.log('Oscillator stopped');
+    }
+
+    function clearCanvas(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = 'rgba(2,6,23,0.6)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    function drawVisualizer(){
+      if(!analyser) return;
+      const bufferLength = analyser.frequencyBinCount;
+      const data = new Uint8Array(bufferLength);
+      const w = canvas.width;
+      const h = canvas.height;
+      function draw(){
+        analyser.getByteFrequencyData(data);
+        ctx.clearRect(0,0,w,h);
+        const g = ctx.createLinearGradient(0,0,w,h);
+        g.addColorStop(0,'rgba(167,139,250,0.06)');
+        g.addColorStop(0.5,'rgba(125,211,252,0.04)');
+        g.addColorStop(1,'rgba(255,255,255,0.01)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0,0,w,h);
+        const barWidth = (w / bufferLength) * 1.6;
+        let x = 0;
+        for(let i=0;i<bufferLength;i++){
+          const v = data[i] / 255;
+          const barHeight = v * h * 1.1;
+          const hue = 200 + (i / bufferLength) * 120;
+          ctx.fillStyle = `hsl(${hue} 80% ${30 + v*40}%)`;
+          ctx.fillRect(x, h - barHeight, barWidth, barHeight);
+          x += barWidth + 1;
+        }
+        rafId = requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // Buttons
+    document.getElementById('playTone').addEventListener('click', () => {
+      if(!audioCtx) ensureAudio();
+      if(!osc){
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        startTone(220);
+        document.getElementById('playTone').textContent = 'Stop Tone';
+      } else {
+        stopTone();
+        document.getElementById('playTone').textContent = 'Play Tone';
+      }
+    });
+    document.getElementById('stopAll').addEventListener('click', () => {
+      stopTone();
+      document.getElementById('playTone').textContent = 'Play Tone';
+    });
+
+    // Hover samples
+    document.querySelectorAll('.sample').forEach(el=>{
+      let hoverOsc = null;
+      el.addEventListener('mouseenter', () => {
+        const f = parseFloat(el.dataset.freq) || 440;
+        ensureAudio();
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        hoverOsc = audioCtx.createOscillator();
+        hoverOsc.type = 'triangle';
+        hoverOsc.frequency.value = f;
+        hoverOsc.connect(analyser);
+        hoverOsc.start();
+      });
+      el.addEventListener('mouseleave', () => {
+        if(hoverOsc){
+          try{hoverOsc.stop()}catch(e){}
+          hoverOsc.disconnect();
+          hoverOsc = null;
+        }
+      });
+      el.addEventListener('click', () => {
+        ensureAudio();
+        const b = audioCtx.createOscillator();
+        b.type = 'square';
+        b.frequency.value = parseFloat(el.dataset.freq) || 440;
+        b.connect(analyser);
+        b.start();
+        setTimeout(()=>{ try{b.stop()}catch(e){} b.disconnect(); }, 300);
+      });
+    });
+
+    // --- Speak-and-Spell-like synth (browser) ---
+    // We'll synthesize short "syllables" using harmonic source + formant bandpass filters,
+    // render them in an OfflineAudioContext, apply a simple downsample/bitcrush, then play.
+
+    const SR = 22050;
+
+    // formant presets (approximate)
+    const FORMANTS = {
+      'A': [800, 1150, 2900],
+      'E': [400, 2000, 2600],
+      'I': [300, 2200, 3000],
+      'O': [500, 700, 2400],
+      'U': [350, 600, 2400],
+      'AH':[700,1200,2600],
+      'S': [6000, 0, 0] // for hiss-like
+    };
+
+    // create a vowel buffer via OfflineAudioContext
+    async function renderVowel(vowel, dur=0.22, f0=120){
+      const len = Math.ceil(SR * dur);
+      const offline = new OfflineAudioContext(1, len, SR);
+
+      // create a periodic source by summing harmonics (via Oscillator + Gain nodes)
+      // We'll create multiple oscillators to simulate harmonics
+      const master = offline.createGain();
+      master.gain.value = 0.6;
+      master.connect(offline.destination);
+
+      // create a node to sum harmonics
+      const harmonics = [];
+      for(let h=1; h<=8; h++){
+        const o = offline.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = f0 * h;
+        const g = offline.createGain();
+        g.gain.value = 1.0 / h;
+        o.connect(g);
+        g.connect(master);
+        harmonics.push({o,g});
+      }
+
+      // start/stop
+      harmonics.forEach(h=>h.o.start(0));
+      harmonics.forEach(h=>h.o.stop(dur));
+
+      // apply formant bandpass filters in series by creating three BiquadFilterNodes
+      const form = FORMANTS[vowel.toUpperCase()] || FORMANTS['AH'];
+      // Instead of connecting filters in series (which would overly color), create three parallel filters
+      // We'll route master through three bandpass filters and sum them
+      const splitter = offline.createGain();
+      master.disconnect();
+      master.connect(splitter);
+
+      const sum = offline.createGain();
+      sum.gain.value = 1.0;
+      sum.connect(offline.destination);
+
+      for(let i=0;i<3;i++){
+        const f = form[i] || (form[0] * (i+1));
+        const bp = offline.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = f;
+        bp.Q.value = 8;
+        splitter.connect(bp);
+        bp.connect(sum);
+      }
+
+      // envelope on master
+      const now = 0;
+      master.gain.setValueAtTime(0.0, now);
+      master.gain.linearRampToValueAtTime(1.0, now + 0.02);
+      master.gain.setValueAtTime(1.0, now + dur - 0.05);
+      master.gain.linearRampToValueAtTime(0.0, now + dur);
+
+      const rendered = await offline.startRendering();
+      return rendered.getChannelData(0).slice(); // Float32Array copy
+    }
+
+    // plosive: short burst of filtered noise
+    async function renderPlosive(dur=0.06){
+      const len = Math.ceil(SR * dur);
+      const offline = new OfflineAudioContext(1, len, SR);
+      const noiseBuf = offline.createBuffer(1, len, SR);
+      const data = noiseBuf.getChannelData(0);
+      for(let i=0;i<len;i++) data[i] = (Math.random()*2 - 1) * Math.exp(-6 * (i/len));
+      const src = offline.createBufferSource();
+      src.buffer = noiseBuf;
+      const hp = offline.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 800;
+      src.connect(hp);
+      hp.connect(offline.destination);
+      src.start(0);
+      const rendered = await offline.startRendering();
+      return rendered.getChannelData(0).slice();
+    }
+
+    // simple comb reverb (time-domain)
+    function combReverbFloat32(input, delayMs=28, decay=0.28){
+      const delay = Math.round(SR * delayMs / 1000);
+      const out = new Float32Array(input.length + delay*4);
+      for(let i=0;i<input.length;i++){
+        out[i] += input[i];
+        if(i + delay < out.length) out[i + delay] += input[i] * decay;
+      }
+      // trim to original length
+      return out.subarray(0, input.length);
+    }
+
+    // bitcrush/downsample: reduce sample rate and bit depth
+    function bitcrushFloat32(input, bitdepth=6, down=6000){
+      // normalize to -1..1 already
+      // quantize bit depth
+      const levels = Math.pow(2, bitdepth) - 1;
+      const q = new Float32Array(input.length);
+      for(let i=0;i<input.length;i++){
+        q[i] = Math.round(input[i] * levels) / levels;
+      }
+      // downsample by averaging blocks
+      const factor = Math.max(1, Math.floor(SR / down));
+      const out = new Float32Array(q.length);
+      for(let i=0;i<q.length;i+=factor){
+        let sum = 0;
+        let count = 0;
+        for(let j=0;j<factor && (i+j)<q.length;j++){
+          sum += q[i+j];
+          count++;
+        }
+        const avg = sum / Math.max(1,count);
+        for(let j=0;j<factor && (i+j)<q.length;j++){
+          out[i+j] = avg;
+        }
+      }
+      return out;
+    }
+
+    // assemble phrase from tokens (simple mapping)
+    async function synthPhrase(text){
+      // simple tokenizer: map letters to vowel/plosive approximations
+      // This is intentionally crude: we map vowels to formant vowels and consonants to plosives/hiss
+      const tokens = [];
+      const vowels = { 'A':'A','E':'E','I':'I','O':'O','U':'U' };
+      for(const ch of text.toUpperCase()){
+        if('AEIOU'.includes(ch)){
+          tokens.push({type:'V',val:vowels[ch]});
+        } else if('BCDFGHJKLMNPQRSTVWXYZ'.includes(ch)){
+          // choose plosive or short vowel to approximate
+          if('S'.includes(ch)){
+            tokens.push({type:'H'}); // hiss
+          } else {
+            tokens.push({type:'P'});
+            // follow with a short vowel to make it audible
+            tokens.push({type:'V',val:'AH'});
+          }
+        } else if(ch === ' '){
+          tokens.push({type:'SIL'});
+        }
+      }
+
+      // render tokens sequentially
+      let parts = [];
+      for(const t of tokens){
+        if(t.type === 'V'){
+          const v = await renderVowel(t.val, 0.20, 120 + Math.random()*80);
+          parts.push(v);
+          parts.push(new Float32Array(Math.round(0.03 * SR))); // short gap
+        } else if(t.type === 'P'){
+          const p = await renderPlosive(0.06);
+          parts.push(p);
+        } else if(t.type === 'H'){
+          // hiss: filtered noise
+          const n = await renderPlosive(0.12);
+          // highpass more
+          for(let i=0;i<n.length;i++) n[i] *= 0.6;
+          parts.push(n);
+        } else if(t.type === 'SIL'){
+          parts.push(new Float32Array(Math.round(0.08 * SR)));
+        }
+      }
+
+      // concatenate
+      let totalLen = parts.reduce((s,p)=>s + p.length, 0);
+      let out = new Float32Array(totalLen);
+      let offset = 0;
+      for(const p of parts){
+        out.set(p, offset);
+        offset += p.length;
+      }
+
+      // add comb reverb
+      out = combReverbFloat32(out, 28, 0.26);
+
+      // bitcrush/downsample to get toy character
+      out = bitcrushFloat32(out, 6, 6000);
+
+      // normalize
+      let max = 0;
+      for(let i=0;i<out.length;i++) if(Math.abs(out[i]) > max) max = Math.abs(out[i]);
+      if(max > 0) for(let i=0;i<out.length;i++) out[i] = out[i] / max * 0.9;
+
+      return out;
+    }
+
+    // play Float32Array buffer via AudioContext
+    async function playFloat32(arr){
+      ensureAudio();
+      if(audioCtx.state === 'suspended') await audioCtx.resume();
+      const buf = audioCtx.createBuffer(1, arr.length, SR);
+      buf.copyToChannel(arr, 0, 0);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      src.connect(analyser);
+      src.start();
+      // stop after buffer ends
+      src.onended = () => { console.log('Playback ended'); };
+      return src;
+    }
+
+    // Speak buttons
+    let currentSource = null;
+    document.getElementById('speakBtn').addEventListener('click', async () => {
+      const phrase = 'PRISM LOOP';
+      document.getElementById('speakBtn').textContent = 'Synthesizing…';
+      const arr = await synthPhrase(phrase);
+      if(currentSource) try{ currentSource.stop(); }catch(e){}
+      currentSource = await playFloat32(arr);
+      document.getElementById('speakBtn').textContent = 'Speak: "PRISM LOOP"';
+    });
+
+    document.getElementById('speakCustom').addEventListener('click', async () => {
+      const text = (document.getElementById('customText').value || '').trim();
+      if(!text){ alert('Type a short phrase first'); return; }
+      document.getElementById('speakCustom').textContent = 'Synthesizing…';
+      const arr = await synthPhrase(text);
+      if(currentSource) try{ currentSource.stop(); }catch(e){}
+      currentSource = await playFloat32(arr);
+      document.getElementById('speakCustom').textContent = 'Speak Custom';
+    });
+
+    // resize canvas to device pixel ratio
+    function resizeCanvas(){
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(canvas.clientWidth * ratio);
+      canvas.height = Math.floor(canvas.clientHeight * ratio);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    clearCanvas();
+
+    console.log('Prism Loop test page with Speak-like synth loaded. Host:', location.hostname);
+  </script>
+</body>
+</html>
