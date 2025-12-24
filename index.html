@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Prism Loop — Test Page</title>
+  <title>Super Sonic Prism — Test Page</title>
   <style>
     :root{
       --bg:#0f1724;
@@ -69,7 +69,7 @@
 <body>
   <main class="card" role="main">
     <section>
-      <h1>Prism Loop — Test Page</h1>
+      <h1>Super Sonic Prism — Test Page</h1>
       <p class="lead">A tiny verification page: shows the site host, live clock, a visualizer, and a Speak‑and‑Spell–style synth you can play.</p>
 
       <div class="meta">
@@ -82,7 +82,7 @@
       <div style="margin-top:12px" class="controls">
         <button id="playTone" class="primary">Play Tone</button>
         <button id="stopAll">Stop</button>
-        <button id="speakBtn" class="small">Speak: "PRISM LOOP"</button>
+        <button id="speakBtn" class="small">Speak: "Super Sonic Prism"</button>
         <button id="speakCustom" class="small">Speak Custom</button>
         <input id="customText" placeholder="Type text (short)" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--mono);padding:6px 8px;border-radius:6px;">
         <div style="margin-left:auto;color:#9fb0c8" id="clock">--:--:--</div>
@@ -474,12 +474,12 @@
     // Speak buttons
     let currentSource = null;
     document.getElementById('speakBtn').addEventListener('click', async () => {
-      const phrase = 'PRISM LOOP';
+      const phrase = 'Super Sonic Prism';
       document.getElementById('speakBtn').textContent = 'Synthesizing…';
       const arr = await synthPhrase(phrase);
       if(currentSource) try{ currentSource.stop(); }catch(e){}
       currentSource = await playFloat32(arr);
-      document.getElementById('speakBtn').textContent = 'Speak: "PRISM LOOP"';
+      document.getElementById('speakBtn').textContent = 'Speak: "Super Sonic Prism"';
     });
 
     document.getElementById('speakCustom').addEventListener('click', async () => {
@@ -502,7 +502,7 @@
     resizeCanvas();
     clearCanvas();
 
-    console.log('Prism Loop test page with Speak-like synth loaded. Host:', location.hostname);
+    console.log('Super Sonic Prism test page with Speak-like synth loaded. Host:', location.hostname);
   </script>
 </body>
 </html>
