@@ -213,6 +213,36 @@
     return { posts: next, deleted };
   }
 
+  function enableWheelScroll(scrollRegionEl, scrollTargetEl) {
+    const region = scrollRegionEl;
+    const target = scrollTargetEl || scrollRegionEl;
+    if (!region || !target) return false;
+    if (typeof region.addEventListener !== 'function') return false;
+
+    region.addEventListener(
+      'wheel',
+      (e) => {
+        // Preserve browser zoom gesture.
+        if (e.ctrlKey) return;
+
+        // Only handle if the target can actually scroll.
+        if (target.scrollHeight <= target.clientHeight + 1) return;
+
+        e.preventDefault();
+
+        // Use scrollBy for better compatibility with different scroll modes.
+        target.scrollBy({
+          top: e.deltaY,
+          left: e.deltaX,
+          behavior: 'auto'
+        });
+      },
+      { passive: false }
+    );
+
+    return true;
+  }
+
   window.SonicPrismPosts = {
     POSTS_KEY,
     MAX_AGE_KEY,
@@ -229,6 +259,7 @@
     createPostElement,
     renderPostList,
     buildPost,
-    deleteFromBottom
+    deleteFromBottom,
+    enableWheelScroll
   };
 })();

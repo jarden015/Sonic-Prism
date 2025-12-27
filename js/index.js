@@ -45,6 +45,10 @@
     return;
   }
 
+  // Ensure mouse wheel scroll works inside the feed even when the page itself is non-scrollable.
+  const postBox = postList.closest?.('.post-box') || postList;
+  api.enableWheelScroll?.(postBox, postList);
+
   function seedIfEmpty(currentPosts) {
     if (currentPosts.length || !POSTS_CONFIG.length) return currentPosts;
 
