@@ -24,11 +24,9 @@
       const distY = e.clientY - logoCenterY;
       const distance = Math.sqrt(distX * distX + distY * distY);
 
-      if (distance <= spinRadius) {
-        logoImg.classList.add('logo-spinning');
-      } else {
-        logoImg.classList.remove('logo-spinning');
-      }
+      const isLogoHover = distance <= spinRadius;
+      logoImg.classList.toggle('logo-spinning', isLogoHover);
+      document.body?.classList.toggle('logo-hover', isLogoHover);
     });
   }
 
