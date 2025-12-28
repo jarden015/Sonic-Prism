@@ -2,7 +2,7 @@
   document.documentElement.dataset.js = 'true';
 
   // Logo spin on hover: track mouse position relative to logo center
-  const logoImg = document.querySelector('.middle-layer > img');
+  const logoImg = document.querySelector('.middle-layer .logo-wrap > img');
   if (logoImg) {
     let logoCenterX = 0;
     let logoCenterY = 0;
@@ -12,6 +12,15 @@
     let cycleProgressMs = 0;
     let rafId = 0;
     let lastFrameAt = 0;
+
+    const starsWrap = document.querySelector('.middle-layer .stars-wrap');
+    let starsLayers = starsWrap
+      ? Array.from(starsWrap.querySelectorAll('.stars-layer'))
+      : [];
+    const gsap = window.gsap;
+    let starsRotateTween = null;
+    let starsStateTween = null;
+    let starsGhostConfigKey = '';
 
     function parseCssTimeToMs(raw) {
       const value = String(raw ?? '').trim();
@@ -28,6 +37,210 @@
       if (value.endsWith('deg')) return Number.parseFloat(value) || 0;
       const num = Number.parseFloat(value);
       return Number.isFinite(num) ? num : 0;
+    }
+
+    function parseCssPx(raw) {
+      const value = String(raw ?? '').trim();
+      if (!value) return 0;
+      if (value.endsWith('px')) return Number.parseFloat(value) || 0;
+      const num = Number.parseFloat(value);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function parseCssPercentOrNumberToUnit(raw) {
+      const value = String(raw ?? '').trim();
+      if (!value) return 0;
+      if (value.endsWith('%')) {
+        const num = Number.parseFloat(value);
+        return Number.isFinite(num) ? num / 100 : 0;
+      }
+      const num = Number.parseFloat(value);
+      if (!Number.isFinite(num)) return 0;
+      // If they type 35 (meaning 35%), treat as percent.
+      return num > 1 ? (num / 100) : num;
+    }
+
+    function parseCubicBezier(raw) {
+      const value = String(raw ?? '').trim();
+      const match = value.match(/cubic-bezier\(\s*([+-]?(?:\d+\.?\d*|\.\d+))\s*,\s*([+-]?(?:\d+\.?\d*|\.\d+))\s*,\s*([+-]?(?:\d+\.?\d*|\.\d+))\s*,\s*([+-]?(?:\d+\.?\d*|\.\d+))\s*\)/i);
+      if (!match) return null;
+      const x1 = Number.parseFloat(match[1]);
+      const y1 = Number.parseFloat(match[2]);
+      const x2 = Number.parseFloat(match[3]);
+      const y2 = Number.parseFloat(match[4]);
+      if (![x1, y1, x2, y2].every(Number.isFinite)) return null;
+      return { x1, y1, x2, y2 };
+    }
+
+    function makeCubicBezierEase(x1, y1, x2, y2) {
+      function sampleCurveX(t) {
+        const invT = 1 - t;
+        return (3 * invT * invT * t * x1) + (3 * invT * t * t * x2) + (t * t * t);
+      }
+
+      function sampleCurveY(t) {
+        const invT = 1 - t;
+        return (3 * invT * invT * t * y1) + (3 * invT * t * t * y2) + (t * t * t);
+      }
+
+      function sampleCurveDerivativeX(t) {
+        const invT = 1 - t;
+        return (3 * invT * invT * x1) + (6 * invT * t * (x2 - x1)) + (3 * t * t * (1 - x2));
+      }
+
+      function solveTForX(x) {
+        let t = x;
+        for (let i = 0; i < 8; i++) {
+          const xAtT = sampleCurveX(t) - x;
+          const dX = sampleCurveDerivativeX(t);
+          if (Math.abs(dX) < 1e-6) break;
+          t = t - xAtT / dX;
+          if (t <= 0) return 0;
+          if (t >= 1) return 1;
+        }
+
+        let lo = 0;
+        let hi = 1;
+        for (let i = 0; i < 20; i++) {
+          const mid = (lo + hi) / 2;
+          const xAtMid = sampleCurveX(mid);
+          if (Math.abs(xAtMid - x) < 1e-6) return mid;
+          if (xAtMid < x) lo = mid;
+          else hi = mid;
+        }
+        return (lo + hi) / 2;
+      }
+
+      return (p) => {
+        const clamped = Math.max(0, Math.min(1, p));
+        const t = solveTForX(clamped);
+        return sampleCurveY(t);
+      };
+    }
+
+    function readStarsVars() {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const rotationMs = Math.max(1, parseCssTimeToMs(rootStyles.getPropertyValue('--stars-rotation-duration')));
+      const trailDeg = Math.max(0, parseCssAngleToDeg(rootStyles.getPropertyValue('--stars-trail-length')));
+      const blurRestPx = Math.max(0, parseCssPx(rootStyles.getPropertyValue('--stars-blur-rest')));
+      const blurHoverPx = Math.max(0, parseCssPx(rootStyles.getPropertyValue('--stars-blur-hover')));
+
+      const ghostCountRaw = Number.parseFloat(rootStyles.getPropertyValue('--stars-ghost-count'));
+      const ghostCount = Math.max(1, Math.min(64, Number.isFinite(ghostCountRaw) ? Math.round(ghostCountRaw) : 1));
+      const ghostOpacityLoss = Math.max(0, Math.min(0.95, parseCssPercentOrNumberToUnit(rootStyles.getPropertyValue('--stars-ghost-opacity-loss'))));
+
+      const easeRaw = rootStyles.getPropertyValue('--stars-ease') || rootStyles.getPropertyValue('--logo-spin-ease');
+      const bez = parseCubicBezier(easeRaw);
+      const easeFn = bez ? makeCubicBezierEase(bez.x1, bez.y1, bez.x2, bez.y2) : 'power2.out';
+
+      // Reuse the existing logo blur in/out durations to keep timing consistent.
+      const inMs = Math.max(1, parseCssTimeToMs(rootStyles.getPropertyValue('--logo-blur-in-duration')));
+      const outMs = Math.max(1, parseCssTimeToMs(rootStyles.getPropertyValue('--logo-blur-out-duration')));
+
+      return { rotationMs, trailDeg, blurRestPx, blurHoverPx, inMs, outMs, easeFn, ghostCount, ghostOpacityLoss };
+    }
+
+    function rebuildStarsGhostLayersIfNeeded(vars) {
+      if (!starsWrap) return;
+      const nextKey = `${vars.ghostCount}|${vars.ghostOpacityLoss}`;
+      if (nextKey === starsGhostConfigKey && starsLayers.length === vars.ghostCount) return;
+      starsGhostConfigKey = nextKey;
+
+      // Replace existing layers so the count actually matches the CSS var.
+      starsWrap.replaceChildren();
+      const loss = vars.ghostOpacityLoss;
+
+      // Simple blur ramp per ghost (kept internal; adjust if you want a new var later)
+      const blurStepPx = 1.8;
+
+      for (let i = 0; i < vars.ghostCount; i++) {
+        const layer = document.createElement('div');
+        layer.className = 'stars-layer';
+        layer.dataset.layer = String(i);
+
+        // Each ghost loses a percentage of opacity vs the previous one.
+        const opacity = Math.pow(1 - loss, i);
+        layer.style.setProperty('--stars-layer-opacity', String(opacity));
+        layer.style.setProperty('--stars-layer-extra-blur', `${i * blurStepPx}px`);
+        layer.style.setProperty('--stars-layer-offset', '0deg');
+
+        starsWrap.appendChild(layer);
+      }
+
+      starsLayers = Array.from(starsWrap.querySelectorAll('.stars-layer'));
+    }
+
+    function ensureStarsTween(vars) {
+      if (!gsap || !starsWrap) return;
+      if (!starsRotateTween) {
+        starsRotateTween = gsap.to(starsWrap, {
+          rotation: '-=360',
+          duration: Math.max(0.001, vars.rotationMs / 1000),
+          ease: 'none',
+          repeat: -1,
+          paused: true
+        });
+      } else {
+        starsRotateTween.duration(Math.max(0.001, vars.rotationMs / 1000));
+      }
+    }
+
+    function setStarsHoverState(hovered) {
+      if (!gsap || !starsWrap) return;
+
+      const vars = readStarsVars();
+      rebuildStarsGhostLayersIfNeeded(vars);
+      if (!starsLayers.length) return;
+      ensureStarsTween(vars);
+
+      const durationSec = (hovered ? vars.inMs : vars.outMs) / 1000;
+      const ease = vars.easeFn;
+
+      if (starsStateTween) {
+        starsStateTween.kill();
+        starsStateTween = null;
+      }
+
+      if (hovered) {
+        // Always start from the neutral/original orientation.
+        starsRotateTween.restart(true);
+      } else {
+        // Stop the infinite spin so we can animate back to 0deg.
+        starsRotateTween.pause();
+      }
+
+      const tl = gsap.timeline({ defaults: { duration: durationSec, ease }, overwrite: true });
+      tl.to(starsWrap, { '--stars-blur': `${hovered ? vars.blurHoverPx : vars.blurRestPx}px` }, 0);
+
+      if (!hovered) {
+        // Rotate back to original position on exit.
+        tl.to(starsWrap, { rotation: 0 }, 0);
+      }
+
+      // Fake motion blur: offset multiple star layers along the "previous" positions.
+      // For counter-clockwise rotation, the trailing positions are slightly clockwise (positive degrees).
+      const n = Math.max(1, starsLayers.length - 1);
+      for (let i = 0; i < starsLayers.length; i++) {
+        const t = i / n;
+        const targetOffsetDeg = hovered ? (vars.trailDeg * t) : 0;
+        tl.to(starsLayers[i], { '--stars-layer-offset': `${targetOffsetDeg}deg` }, 0);
+        
+        // Restore original opacity on hover exit
+        if (!hovered) {
+          const originalOpacity = Math.pow(1 - vars.ghostOpacityLoss, i);
+          tl.to(starsLayers[i], { '--stars-layer-opacity': String(originalOpacity) }, 0);
+        }
+      }
+
+      if (!hovered) {
+        tl.eventCallback('onComplete', () => {
+          // Hard reset ensures next hover begins from the same visual orientation.
+          starsRotateTween.pause(0);
+          gsap.set(starsWrap, { rotation: 0 });
+        });
+      }
+
+      starsStateTween = tl;
     }
 
     function readLogoColorVars() {
@@ -109,9 +322,9 @@
         }
       }
 
-      // Always cycle hue when there's any color (keeps it smooth during fade-out too)
+      // Cycle hue once, then hold at the end
       if (currentAmount > 0) {
-        cycleProgressMs = (cycleProgressMs + dt) % vars.cycleMs;
+        cycleProgressMs = Math.min(cycleProgressMs + dt, vars.cycleMs);
       }
       const hueDeg = vars.hueStart + vars.hueRange * (cycleProgressMs / vars.cycleMs);
 
@@ -137,6 +350,10 @@
 
     updateLogoCenterPosition();
     window.addEventListener('resize', updateLogoCenterPosition);
+
+    // Initialize star opacity on page load
+    const initialVars = readStarsVars();
+    rebuildStarsGhostLayersIfNeeded(initialVars);
 
     document.addEventListener('mousemove', (e) => {
       const spinRadius = parseFloat(
@@ -165,6 +382,9 @@
 
       logoImg.classList.toggle('logo-spinning', isLogoHover);
       document.body?.classList.toggle('logo-hover', isLogoHover);
+
+      // Stars: same hover area as logo
+      setStarsHoverState(isLogoHover);
     });
   }
 

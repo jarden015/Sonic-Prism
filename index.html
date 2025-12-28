@@ -12,7 +12,15 @@
 </head>
 <body>
   <div class="middle-layer">
-    <img src="/logo.png" alt="Logo">
+    <div class="stars-wrap" aria-hidden="true">
+      <div class="stars-layer" data-layer="0"></div>
+      <div class="stars-layer" data-layer="1"></div>
+      <div class="stars-layer" data-layer="2"></div>
+      <div class="stars-layer" data-layer="3"></div>
+    </div>
+    <div class="logo-wrap">
+      <img src="/logo.png" alt="Logo">
+    </div>
   </div>
   
   <header class="site-header">
@@ -47,5 +55,9 @@
       </div>
     </section>
   </main>
+
+  <!-- GSAP loaded after DOM is loaded -->
+  <!-- Can load more GSAP plugins here from assets/gsap minified/ -->
+  <script src="assets/gsap minified/gsap.min.js"></script>
 </body>
 </html>
