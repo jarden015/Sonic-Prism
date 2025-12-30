@@ -95,26 +95,54 @@
 
   let imgTween, textTween;
 
-  function startAnimations() {
+  function startWowAnimations() {
     // Kill any existing tweens
     if (imgTween) imgTween.kill();
     if (textTween) textTween.kill();
 
     // Start spinning
-    imgTween = gsap.to(wowImg, { rotation: 260 * 360, duration: 30, ease: "power2.inOut" });
-    textTween = gsap.to(magicText, { rotation: -260 * 360, duration: 30, ease: "power2.inOut" });
+    imgTween = gsap.to(wowImg, { rotation: 260 * 360, duration: 30, ease: "sine.inOut" });
+    textTween = gsap.to(magicText, { rotation: -260 * 360, duration: 30, ease: "sine.inOut" });
   }
 
-  function rewindAnimations() {
+  function rewindWowAnimations() {
     // Kill and rewind
     if (imgTween) imgTween.kill();
     if (textTween) textTween.kill();
 
-    imgTween = gsap.to(wowImg, { rotation: 0, duration: 2, ease: "power2.inOut" });
-    textTween = gsap.to(magicText, { rotation: 45, duration: 2, ease: "power2.inOut" });
+    imgTween = gsap.to(wowImg, { rotation: 0, duration: 2, ease: "sine.inOut" });
+    textTween = gsap.to(magicText, { rotation: 45, duration: 2, ease: "sine.inOut" });
   }
 
-  // Add hover listeners to the image
-  wowImg.addEventListener('mouseenter', startAnimations);
-  wowImg.addEventListener('mouseleave', rewindAnimations);
+  // Add hover listeners to the wow image
+  wowImg.addEventListener('mouseenter', startWowAnimations);
+  wowImg.addEventListener('mouseleave', rewindWowAnimations);
+})();
+
+// GSAP animation for logo
+(() => {
+  const logoImg = document.getElementById('logo-img');
+
+  if (!logoImg) return;
+
+  let logoTween;
+
+  function startLogoAnimation() {
+    // Kill any existing tween
+    if (logoTween) logoTween.kill();
+
+    // Start spinning
+    logoTween = gsap.to(logoImg, { rotation: 260 * 360, duration: 30, ease: "sine.inOut" });
+  }
+
+  function rewindLogoAnimation() {
+    // Kill and rewind
+    if (logoTween) logoTween.kill();
+
+    logoTween = gsap.to(logoImg, { rotation: 0, duration: 2, ease: "sine.inOut" });
+  }
+
+  // Add hover listeners to the logo
+  logoImg.addEventListener('mouseenter', startLogoAnimation);
+  logoImg.addEventListener('mouseleave', rewindLogoAnimation);
 })();

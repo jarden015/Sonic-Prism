@@ -46,7 +46,7 @@ body {
 
 .nav-container {
   max-width: 100%;
-  padding-block: clamp(1.084vh, 0.723vw, 2.168vh);
+  padding: clamp(.2vw, .2vw, .2vw);
   padding-inline: clamp(2vw, 2vw, 2vw);
   display: flex;
   align-items: center;
@@ -60,7 +60,21 @@ body {
   font-weight: 700;
   font-size: 1.1rem;
   letter-spacing: -0.02em;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-brand img {
+  width: 50px;
+  height: auto;
+  transform-origin: 50% 50%;
+  margin-top: 10%;
+}
+
+.nav-brand span {
+  text-align: center;
+  line-height: 1;
 }
 
 .nav-links {
@@ -215,7 +229,7 @@ a:active {
 
 h1,
 h2 {
-  margin: 4px 0;
+  margin: 4px 0 8px;
   letter-spacing: -0.02em;
 }
 
