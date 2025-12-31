@@ -14,7 +14,7 @@
   
   <header class="site-header">
     <nav class="nav-container">
-      <div class="nav-brand">Sonic Prism</div>
+      <div class="nav-brand"><img id="logo-img" src="logo.png" alt="Logo"><span>Sonic<br>Prism</span></div>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
         <li><a href="features.html">Features</a></li>
@@ -24,22 +24,16 @@
     </nav>
   </header>
 
-  <main class="layout" aria-label="Two column layout">
-    <section class="column left" aria-label="Left column">
+  <main class="layout single" aria-label="Single column layout">
+    <section class="column single" aria-label="Single column">
       <div class="column-inner">
         <h1>Contact</h1>
         <section class="post-box" aria-label="Contact section">
-          <p style="padding: 14px; margin: 0;">Get in touch with us. We'd love to hear from you!</p>
-        </section>
-      </div>
-    </section>
-
-    <section class="column right" aria-label="Right column">
-      <div class="column-inner">
-        <h1 class="mind-title">What's on my mind</h1>
-
-        <section class="post-box" aria-label="Posts">
-          <div class="post-list" id="postList" role="feed"></div>
+          <div class="post-scroll no-scroll">
+            <img src="assets/images/dunno.png" alt="Dunno" style="position: absolute; left: -8%; top: 50%; transform: translateY(-50%) rotate(90deg); width: 35%; height: auto;">
+            <img src="assets/images/dunno.png" alt="Dunno" style="position: absolute; right: -8%; top: 50%; transform: translateY(-50%) rotate(-90deg); width: 35%; height: auto;">
+            <img src="assets/images/dunno.png" alt="Dunno" style="position: absolute; left: 50%; top: 33%; transform: translateX(-50%); width: 40%; height: auto;">
+          </div>
         </section>
       </div>
     </section>
@@ -47,5 +41,11 @@
 
   <!-- GSAP loaded after DOM is loaded -->
   <script src="assets/gsap minified/gsap.min.js"></script>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <p>Copyright© 2026.</p>
+    </div>
+  </footer>
 </body>
 </html>

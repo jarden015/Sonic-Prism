@@ -20,7 +20,8 @@
   function getMaxAgeDays(fallback = 14) {
     try {
       const raw = localStorage.getItem(MAX_AGE_KEY);
-      const n = clampInt(raw, { min: 1, max: 3650 });
+      // Allow 0 to mean "never truncate"
+      const n = clampInt(raw, { min: 0, max: 3650 });
       return n ?? fallback;
     } catch {
       return fallback;
@@ -28,7 +29,8 @@
   }
 
   function setMaxAgeDays(days) {
-    const n = clampInt(days, { min: 1, max: 3650 });
+    // Allow 0 to mean "never truncate"
+    const n = clampInt(days, { min: 0, max: 3650 });
     if (n == null) return false;
     try {
       localStorage.setItem(MAX_AGE_KEY, String(n));
@@ -64,6 +66,8 @@
   }
 
   function prunePosts(posts, maxAgeDays = getMaxAgeDays()) {
+    // 0 means never truncate
+    if (maxAgeDays === 0) return posts.filter((p) => typeof p?.createdAt === 'number');
     const cutoff = Date.now() - daysToMs(maxAgeDays);
     return posts.filter((p) => typeof p?.createdAt === 'number' && p.createdAt >= cutoff);
   }
