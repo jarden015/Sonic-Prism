@@ -61,7 +61,32 @@
   }
 
   function sortNewestFirst(posts) {
-    posts.sort((a, b) => (b?.createdAt || 0) - (a?.createdAt || 0));
+    function toStickyPosition(raw) {
+      const n = Number.parseInt(String(raw), 10);
+      if (!Number.isFinite(n)) return Number.POSITIVE_INFINITY;
+      if (n < 1) return 1;
+      return n;
+    }
+
+    posts.sort((a, b) => {
+      const aSticky = a?.sticky === true;
+      const bSticky = b?.sticky === true;
+
+      if (aSticky && !bSticky) return -1;
+      if (!aSticky && bSticky) return 1;
+
+      // When both are sticky, order by explicit position (ascending), then newest.
+      if (aSticky && bSticky) {
+        const aPos = toStickyPosition(a?.stickyPosition);
+        const bPos = toStickyPosition(b?.stickyPosition);
+        if (aPos !== bPos) return aPos - bPos;
+        return (b?.createdAt || 0) - (a?.createdAt || 0);
+      }
+
+      // Non-sticky posts remain strictly chronological (newest first).
+      return (b?.createdAt || 0) - (a?.createdAt || 0);
+    });
+
     return posts;
   }
 
@@ -203,18 +228,10 @@
     return {
       id: safeId(),
       createdAt: Date.now(),
+      sticky: false,
+      stickyPosition: null,
       blocks
     };
-  }
-
-  function deleteFromBottom(posts, nFromBottom) {
-    const n = clampInt(nFromBottom, { min: 1, max: 1000000 });
-    if (n == null) return { posts, deleted: null };
-    const idx = posts.length - n;
-    if (idx < 0 || idx >= posts.length) return { posts, deleted: null };
-    const deleted = posts[idx];
-    const next = posts.slice(0, idx).concat(posts.slice(idx + 1));
-    return { posts: next, deleted };
   }
 
   function enableWheelScroll(scrollRegionEl, scrollTargetEl) {
@@ -263,7 +280,6 @@
     createPostElement,
     renderPostList,
     buildPost,
-    deleteFromBottom,
     enableWheelScroll
   };
 })();

@@ -7,6 +7,8 @@
         "type": "text",
         "text": "Welcome! Site is under construction."
       }
-    ]
+    ],
+    "sticky": true,
+    "stickyPosition": 1
   }
 ]
