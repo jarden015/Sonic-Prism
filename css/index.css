@@ -68,7 +68,7 @@ body {
 .footer-container p {
   color: rgba(255, 255, 255, 0.82);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.76rem;
   margin: 0;
 }
 
@@ -99,9 +99,16 @@ body {
   transform-origin: 50% 50%;
 }
 
-.nav-brand span {
-  text-align: center;
+.nav-brand a {
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
   line-height: 1;
+}
+
+.nav-brand a:link,
+.nav-brand a:visited,
+.nav-brand a:hover {
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .nav-links {

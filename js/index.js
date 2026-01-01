@@ -102,7 +102,7 @@
 
     // Start spinning
     imgTween = gsap.to(wowImg, { rotation: 260 * 360, duration: 30, ease: "sine.inOut" });
-    textTween = gsap.to(magicText, { rotation: -260 * 360, duration: 30, ease: "sine.inOut" });
+    textTween = gsap.to(magicText, { rotation: 45 - 260 * 360, duration: 30, ease: "sine.inOut" });
   }
 
   function rewindWowAnimations() {
