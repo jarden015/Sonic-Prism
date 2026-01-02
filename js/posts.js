@@ -151,6 +151,153 @@
     }
   }
 
+  function sanitizeRichTextHtml(raw) {
+    const input = String(raw || '');
+    if (!input.trim()) return '';
+
+    // Allow only simple inline formatting + links + line breaks.
+    // Everything else is unwrapped to plain text, with block-ish elements becoming line breaks.
+    const ALLOWED_INLINE = new Set(['b', 'strong', 'i', 'em', 'u', 's', 'br', 'a']);
+    const BLOCKISH = new Set(['div', 'p', 'section', 'article', 'header', 'footer', 'aside', 'main', 'li', 'ul', 'ol']);
+
+    function appendBreak(parent) {
+      const last = parent.lastChild;
+      if (last && last.nodeType === Node.ELEMENT_NODE && last.tagName.toLowerCase() === 'br') return;
+      parent.appendChild(document.createElement('br'));
+    }
+
+    function safeLinkHref(href) {
+      const normalized = normalizeHttpUrl(href);
+      return normalized || null;
+    }
+
+    function normalizeSpanWrapper(spanEl, parentOut) {
+      const style = String(spanEl.getAttribute('style') || '').toLowerCase();
+
+      const isBold = /font-weight\s*:\s*(bold|[6-9]00)/.test(style);
+      const isItalic = /font-style\s*:\s*italic/.test(style);
+      const isUnderline = /text-decoration\s*:\s*underline/.test(style);
+      const isStrike = /text-decoration\s*:\s*(line-through|strikethrough)/.test(style);
+
+      let out = parentOut;
+      if (isBold) {
+        const el = document.createElement('strong');
+        out.appendChild(el);
+        out = el;
+      }
+      if (isItalic) {
+        const el = document.createElement('em');
+        out.appendChild(el);
+        out = el;
+      }
+      if (isUnderline) {
+        const el = document.createElement('u');
+        out.appendChild(el);
+        out = el;
+      }
+      if (isStrike) {
+        const el = document.createElement('s');
+        out.appendChild(el);
+        out = el;
+      }
+
+      for (const child of Array.from(spanEl.childNodes)) {
+        cleanNode(child, out);
+      }
+    }
+
+    function cleanNode(node, parentOut) {
+      if (!node) return;
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        parentOut.appendChild(document.createTextNode(node.nodeValue || ''));
+        return;
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return;
+      }
+
+      const tag = node.tagName.toLowerCase();
+
+      if (tag === 'br') {
+        parentOut.appendChild(document.createElement('br'));
+        return;
+      }
+
+      if (tag === 'span') {
+        normalizeSpanWrapper(node, parentOut);
+        return;
+      }
+
+      if (ALLOWED_INLINE.has(tag)) {
+        if (tag === 'a') {
+          const href = safeLinkHref(node.getAttribute('href'));
+          if (!href) {
+            for (const child of Array.from(node.childNodes)) {
+              cleanNode(child, parentOut);
+            }
+            return;
+          }
+
+          const a = document.createElement('a');
+          a.href = href;
+          a.rel = 'noopener noreferrer';
+          a.target = '_blank';
+          for (const child of Array.from(node.childNodes)) {
+            cleanNode(child, a);
+          }
+          parentOut.appendChild(a);
+          return;
+        }
+
+        const el = document.createElement(tag);
+        for (const child of Array.from(node.childNodes)) {
+          cleanNode(child, el);
+        }
+        parentOut.appendChild(el);
+        return;
+      }
+
+      // Block-ish elements: preserve separation with line breaks.
+      if (BLOCKISH.has(tag)) {
+        appendBreak(parentOut);
+        for (const child of Array.from(node.childNodes)) {
+          cleanNode(child, parentOut);
+        }
+        appendBreak(parentOut);
+        return;
+      }
+
+      // Unknown/disallowed: unwrap to its children.
+      for (const child of Array.from(node.childNodes)) {
+        cleanNode(child, parentOut);
+      }
+    }
+
+    let doc;
+    try {
+      doc = new DOMParser().parseFromString(input, 'text/html');
+    } catch {
+      return '';
+    }
+
+    const out = document.createElement('div');
+    for (const child of Array.from(doc.body.childNodes)) {
+      cleanNode(child, out);
+    }
+
+    // Trim leading/trailing breaks.
+    while (out.firstChild && out.firstChild.nodeType === Node.ELEMENT_NODE && out.firstChild.tagName.toLowerCase() === 'br') {
+      out.removeChild(out.firstChild);
+    }
+    while (out.lastChild && out.lastChild.nodeType === Node.ELEMENT_NODE && out.lastChild.tagName.toLowerCase() === 'br') {
+      out.removeChild(out.lastChild);
+    }
+
+    return out.innerHTML;
+  }
+
   function createPostElement(post, { metaPrefix } = {}) {
     const wrapper = document.createElement('article');
     wrapper.className = 'post';
@@ -184,10 +331,17 @@
 
     for (const block of post.blocks || []) {
       if (block?.type === 'text' && typeof block.text === 'string' && block.text.trim()) {
-        const p = document.createElement('p');
-        p.className = 'post-text';
-        p.textContent = block.text;
-        content.appendChild(p);
+        if (block.rich === true) {
+          const el = document.createElement('div');
+          el.className = 'post-text';
+          el.innerHTML = sanitizeRichTextHtml(block.text);
+          content.appendChild(el);
+        } else {
+          const p = document.createElement('p');
+          p.className = 'post-text';
+          p.textContent = block.text;
+          content.appendChild(p);
+        }
       }
 
       if (block?.type === 'image' && typeof block.src === 'string') {
@@ -284,6 +438,7 @@
     normalizeHttpUrl,
     normalizeImageSource,
     parseIframeInput,
+    sanitizeRichTextHtml,
     createPostElement,
     renderPostList,
     buildPost,
