@@ -14,6 +14,19 @@
       ],
       "sticky": true,
       "stickyPosition": 1
+    },
+    {
+      "id": "c36e3d31-9d72-4591-afa4-4c44f64b17db",
+      "createdAt": 1767639679615,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Small update with a fix for when the window changes size from some outside code. Same download link.",
+          "rich": true
+        }
+      ]
     }
   ]
 }
