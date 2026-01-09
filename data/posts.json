@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "44f500ce-ebc2-498f-a103-717dc49c0d57",
+      "createdAt": 1767921258845,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Fixed a bug with the second browser window not stopping its videos when top right clicked.",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "c36e3d31-9d72-4591-afa4-4c44f64b17db",
       "createdAt": 1767639679615,
       "sticky": false,
