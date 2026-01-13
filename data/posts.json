@@ -23,7 +23,7 @@
       "blocks": [
         {
           "type": "text",
-          "text": "If the quit menu is not working, it's not a hack its just a underlying bug. You will have to use task manager to close it if that happens. The music may continue to play for a min (seems to auto close after a min or so) after that or until you close the Vuplex task manager process (this is the built in browser). I am trying to figure out a fix.",
+          "text": "If the quit menu is not working, it's not a hack its just a underlying bug. You will have to use task manager (Alt F4 might work on it) to close it if that happens. The music may continue to play for a min (seems to auto close after a min or so) after that or until you close the Vuplex task manager process (this is the built in browser). I am trying to figure out a fix.<br><br>Update: I have the fix and fix for the overnight bug listed in the readme also. I am going through a rewrite, should be out in a few days.",
           "rich": true
         }
       ]
