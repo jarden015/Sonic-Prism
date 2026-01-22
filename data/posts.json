@@ -1,6 +1,6 @@
 {
   "settings": {
-    "maxAgeDays": 0
+    "maxAgeDays": 364
   },
   "posts": [
     {
@@ -17,8 +17,8 @@
     },
     {
       "id": "9e040e61-bde5-4776-bc25-2be002445cbd",
-      "createdAt": 1768082715750,
-      "sticky": true,
+      "createdAt": 1769055807428,
+      "sticky": false,
       "stickyPosition": 2,
       "blocks": [
         {
