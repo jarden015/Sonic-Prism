@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "988f8457-d6f3-4573-8ac6-4fc691233c15",
+      "createdAt": 1770745952890,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "I know I am slow, sorry about that, there are some real life complications. I will continue work on it when I get the chance. There is good news though, the Vuplex browser now routs audio through Unity so there is Unity audio components available like echo and stuff. I have implemented a better menu and UI.",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "9e040e61-bde5-4776-bc25-2be002445cbd",
       "createdAt": 1769055807428,
       "sticky": false,
