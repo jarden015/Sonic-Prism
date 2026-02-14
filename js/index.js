@@ -1,6 +1,71 @@
 (() => {
   document.documentElement.dataset.js = 'true';
 
+  // Gallery image sound handler with max 3 concurrent plays
+  const galleryImages = document.querySelectorAll('.gallery-img[data-sound]');
+  const activeAudioPlayers = new Set();
+  const MAX_CONCURRENT_AUDIO = 5;
+
+  function cleanupAudioPlayer(audio) {
+    activeAudioPlayers.delete(audio);
+  }
+
+  function pruneInactiveAudioPlayers() {
+    for (const audio of activeAudioPlayers) {
+      if (audio.ended || audio.paused) {
+        activeAudioPlayers.delete(audio);
+      }
+    }
+  }
+
+  galleryImages.forEach(img => {
+    img.style.cursor = 'pointer';
+    
+    img.addEventListener('mouseenter', (e) => {
+      const soundPath = e.target.dataset.sound;
+      if (soundPath) {
+        pruneInactiveAudioPlayers();
+
+        // Only play if we're under the cap
+        if (activeAudioPlayers.size < MAX_CONCURRENT_AUDIO) {
+          const audio = new Audio(soundPath);
+          activeAudioPlayers.add(audio);
+
+          // Remove from active list when finished
+          audio.addEventListener('ended', () => cleanupAudioPlayer(audio), { once: true });
+          audio.addEventListener('error', () => cleanupAudioPlayer(audio), { once: true });
+
+          audio.play().catch(error => {
+            cleanupAudioPlayer(audio);
+            console.log('Sound play error:', error);
+          });
+        }
+      }
+    });
+
+    img.addEventListener('click', (e) => {
+      const soundPath = e.target.dataset.sound;
+      if (soundPath) {
+        pruneInactiveAudioPlayers();
+
+        // Only play if we're under the cap
+        if (activeAudioPlayers.size < MAX_CONCURRENT_AUDIO) {
+          const audio = new Audio(soundPath);
+          activeAudioPlayers.add(audio);
+
+          // Remove from active list when finished
+          audio.addEventListener('ended', () => cleanupAudioPlayer(audio), { once: true });
+          audio.addEventListener('error', () => cleanupAudioPlayer(audio), { once: true });
+
+          audio.play().catch(error => {
+            cleanupAudioPlayer(audio);
+            console.log('Sound play error:', error);
+          });
+        }
+      }
+    });
+  });
+
   const api = window.SonicPrismPosts;
   if (!api) return;
 
@@ -137,10 +202,12 @@
 (() => {
   const wowImg = document.getElementById('wow-img');
   const magicText = document.getElementById('magic-text');
+  const siteHeader = document.querySelector('.site-header');
 
   if (!wowImg || !magicText) return;
 
   let imgTween, textTween;
+  let isHoveringWow = false;
 
   function startWowAnimations() {
     // Kill any existing tweens
@@ -161,9 +228,37 @@
     textTween = gsap.to(magicText, { rotation: 45, duration: 2, ease: "sine.inOut" });
   }
 
-  // Add hover listeners to the wow image
-  wowImg.addEventListener('mouseenter', startWowAnimations);
-  wowImg.addEventListener('mouseleave', rewindWowAnimations);
+  function isPointInsideRect(x, y, rect) {
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  }
+
+  function updateWowHoverState(event) {
+    const wowRect = wowImg.getBoundingClientRect();
+    const headerRect = siteHeader ? siteHeader.getBoundingClientRect() : null;
+
+    const insideWow = isPointInsideRect(event.clientX, event.clientY, wowRect);
+    const insideHeader = headerRect ? isPointInsideRect(event.clientX, event.clientY, headerRect) : false;
+    const shouldHover = insideWow && !insideHeader;
+
+    if (shouldHover && !isHoveringWow) {
+      isHoveringWow = true;
+      startWowAnimations();
+      return;
+    }
+
+    if (!shouldHover && isHoveringWow) {
+      isHoveringWow = false;
+      rewindWowAnimations();
+    }
+  }
+
+  document.addEventListener('pointermove', updateWowHoverState, { passive: true });
+  document.addEventListener('pointerleave', () => {
+    if (isHoveringWow) {
+      isHoveringWow = false;
+      rewindWowAnimations();
+    }
+  });
 })();
 
 // GSAP animation for logo

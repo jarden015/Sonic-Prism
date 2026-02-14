@@ -31,8 +31,9 @@ body {
   padding: 0;
   flex-shrink: 0;
   position: relative;
-  z-index: 100;
+  z-index: 200;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .site-header::before {
@@ -146,6 +147,29 @@ body {
 
 .nav-links a:visited {
   color: rgba(255, 255, 255, 0.82);
+}
+
+.header-image-gallery {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 60%;
+}
+
+.gallery-img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(120, 200, 255, 0.3);
 }
 
 /* Unvisited links */
