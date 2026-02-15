@@ -3,8 +3,97 @@
 
   // Gallery image sound handler with max 3 concurrent plays
   const galleryImages = document.querySelectorAll('.gallery-img[data-sound]');
+  const volumeControl = document.getElementById('gallery-volume');
+  const muteButton = document.getElementById('gallery-mute');
   const activeAudioPlayers = new Set();
+  const activeHoverLoops = new Map();
   const MAX_CONCURRENT_AUDIO = 5;
+  const HOVER_VOLUME_KEY = 'sonicPrism.hoverVolume.v1';
+  const HOVER_MUTED_KEY = 'sonicPrism.hoverMuted.v1';
+  const DEFAULT_HOVER_VOLUME = 0.7;
+  let hoverVolume = DEFAULT_HOVER_VOLUME;
+  let isHoverMuted = false;
+
+  function clampHoverVolume(raw) {
+    const value = Number.parseFloat(String(raw));
+    if (!Number.isFinite(value)) return DEFAULT_HOVER_VOLUME;
+    if (value < 0) return 0;
+    if (value > 1) return 1;
+    return value;
+  }
+
+  function loadHoverVolume() {
+    try {
+      const stored = localStorage.getItem(HOVER_VOLUME_KEY);
+      if (stored == null) return DEFAULT_HOVER_VOLUME;
+      return clampHoverVolume(stored);
+    } catch {
+      return DEFAULT_HOVER_VOLUME;
+    }
+  }
+
+  function saveHoverVolume(volume) {
+    try {
+      localStorage.setItem(HOVER_VOLUME_KEY, String(volume));
+    } catch {
+      // ignore storage write issues
+    }
+  }
+
+  function loadHoverMuted() {
+    try {
+      return localStorage.getItem(HOVER_MUTED_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function saveHoverMuted(muted) {
+    try {
+      localStorage.setItem(HOVER_MUTED_KEY, muted ? '1' : '0');
+    } catch {
+      // ignore storage write issues
+    }
+  }
+
+  function getEffectiveHoverVolume() {
+    return isHoverMuted ? 0 : hoverVolume;
+  }
+
+  function syncMuteButton() {
+    if (!muteButton) return;
+    muteButton.setAttribute('aria-pressed', isHoverMuted ? 'true' : 'false');
+  }
+
+  function applyHoverVolumeToActivePlayers() {
+    for (const audio of activeAudioPlayers) {
+      audio.volume = getEffectiveHoverVolume();
+    }
+  }
+
+  hoverVolume = loadHoverVolume();
+  isHoverMuted = loadHoverMuted();
+
+  if (volumeControl) {
+    volumeControl.value = String(Math.round(hoverVolume * 100));
+    volumeControl.addEventListener('input', (event) => {
+      const nextPercent = Number.parseFloat(event.target?.value);
+      hoverVolume = clampHoverVolume(nextPercent / 100);
+      applyHoverVolumeToActivePlayers();
+      saveHoverVolume(hoverVolume);
+    });
+  }
+
+  if (muteButton) {
+    muteButton.addEventListener('click', () => {
+      isHoverMuted = !isHoverMuted;
+      syncMuteButton();
+      applyHoverVolumeToActivePlayers();
+      saveHoverMuted(isHoverMuted);
+    });
+  }
+
+  syncMuteButton();
 
   function cleanupAudioPlayer(audio) {
     activeAudioPlayers.delete(audio);
@@ -18,51 +107,125 @@
     }
   }
 
+  function playGallerySound(soundPath) {
+    if (!soundPath) return;
+
+    pruneInactiveAudioPlayers();
+
+    // Only play if we're under the cap
+    if (activeAudioPlayers.size >= MAX_CONCURRENT_AUDIO) {
+      return;
+    }
+
+    const audio = new Audio(soundPath);
+    audio.volume = getEffectiveHoverVolume();
+    activeAudioPlayers.add(audio);
+
+    // Remove from active list when finished
+    audio.addEventListener('ended', () => cleanupAudioPlayer(audio), { once: true });
+    audio.addEventListener('error', () => cleanupAudioPlayer(audio), { once: true });
+
+    audio.play().catch(error => {
+      cleanupAudioPlayer(audio);
+      console.log('Sound play error:', error);
+    });
+  }
+
+  function runHoverLoopIteration(img) {
+    const loopState = activeHoverLoops.get(img);
+    if (!loopState) return;
+
+    pruneInactiveAudioPlayers();
+
+    // Only play if we're under the cap
+    if (activeAudioPlayers.size >= MAX_CONCURRENT_AUDIO) {
+      if (!loopState.isHovering) {
+        activeHoverLoops.delete(img);
+      }
+      return;
+    }
+
+    const audio = new Audio(loopState.soundPath);
+    audio.volume = getEffectiveHoverVolume();
+    loopState.audio = audio;
+    activeAudioPlayers.add(audio);
+
+    audio.addEventListener('ended', () => {
+      cleanupAudioPlayer(audio);
+
+      const currentState = activeHoverLoops.get(img);
+      if (!currentState || currentState.audio !== audio) return;
+
+      currentState.audio = null;
+      if (currentState.isHovering) {
+        runHoverLoopIteration(img);
+      } else {
+        activeHoverLoops.delete(img);
+      }
+    }, { once: true });
+
+    audio.addEventListener('error', () => {
+      cleanupAudioPlayer(audio);
+      const currentState = activeHoverLoops.get(img);
+      if (currentState && currentState.audio === audio) {
+        activeHoverLoops.delete(img);
+      }
+    }, { once: true });
+
+    audio.play().catch(error => {
+      cleanupAudioPlayer(audio);
+      const currentState = activeHoverLoops.get(img);
+      if (currentState && currentState.audio === audio) {
+        activeHoverLoops.delete(img);
+      }
+      console.log('Sound play error:', error);
+    });
+  }
+
+  function startHoverLoopForImage(img) {
+    if (!img) return;
+
+    const existingState = activeHoverLoops.get(img);
+    if (existingState) {
+      existingState.isHovering = true;
+      return;
+    }
+
+    const soundPath = img.dataset.sound;
+    if (!soundPath) return;
+
+    activeHoverLoops.set(img, {
+      soundPath,
+      isHovering: true,
+      audio: null
+    });
+
+    runHoverLoopIteration(img);
+  }
+
+  function stopHoverLoopForImage(img) {
+    const loopState = activeHoverLoops.get(img);
+    if (!loopState) return;
+
+    loopState.isHovering = false;
+    if (!loopState.audio) {
+      activeHoverLoops.delete(img);
+    }
+  }
+
   galleryImages.forEach(img => {
     img.style.cursor = 'pointer';
     
     img.addEventListener('mouseenter', (e) => {
-      const soundPath = e.target.dataset.sound;
-      if (soundPath) {
-        pruneInactiveAudioPlayers();
+      startHoverLoopForImage(e.currentTarget);
+    });
 
-        // Only play if we're under the cap
-        if (activeAudioPlayers.size < MAX_CONCURRENT_AUDIO) {
-          const audio = new Audio(soundPath);
-          activeAudioPlayers.add(audio);
-
-          // Remove from active list when finished
-          audio.addEventListener('ended', () => cleanupAudioPlayer(audio), { once: true });
-          audio.addEventListener('error', () => cleanupAudioPlayer(audio), { once: true });
-
-          audio.play().catch(error => {
-            cleanupAudioPlayer(audio);
-            console.log('Sound play error:', error);
-          });
-        }
-      }
+    img.addEventListener('mouseleave', (e) => {
+      stopHoverLoopForImage(e.currentTarget);
     });
 
     img.addEventListener('click', (e) => {
-      const soundPath = e.target.dataset.sound;
-      if (soundPath) {
-        pruneInactiveAudioPlayers();
-
-        // Only play if we're under the cap
-        if (activeAudioPlayers.size < MAX_CONCURRENT_AUDIO) {
-          const audio = new Audio(soundPath);
-          activeAudioPlayers.add(audio);
-
-          // Remove from active list when finished
-          audio.addEventListener('ended', () => cleanupAudioPlayer(audio), { once: true });
-          audio.addEventListener('error', () => cleanupAudioPlayer(audio), { once: true });
-
-          audio.play().catch(error => {
-            cleanupAudioPlayer(audio);
-            console.log('Sound play error:', error);
-          });
-        }
-      }
+      playGallerySound(e.currentTarget.dataset.sound);
     });
   });
 
@@ -202,7 +365,6 @@
 (() => {
   const wowImg = document.getElementById('wow-img');
   const magicText = document.getElementById('magic-text');
-  const siteHeader = document.querySelector('.site-header');
 
   if (!wowImg || !magicText) return;
 
@@ -234,11 +396,11 @@
 
   function updateWowHoverState(event) {
     const wowRect = wowImg.getBoundingClientRect();
-    const headerRect = siteHeader ? siteHeader.getBoundingClientRect() : null;
+    const magicRect = magicText.getBoundingClientRect();
 
     const insideWow = isPointInsideRect(event.clientX, event.clientY, wowRect);
-    const insideHeader = headerRect ? isPointInsideRect(event.clientX, event.clientY, headerRect) : false;
-    const shouldHover = insideWow && !insideHeader;
+    const insideMagic = isPointInsideRect(event.clientX, event.clientY, magicRect);
+    const shouldHover = insideWow || insideMagic;
 
     if (shouldHover && !isHoveringWow) {
       isHoveringWow = true;
