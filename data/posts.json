@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "ccc9d06c-702d-403d-8f69-6feb64b3e628",
+      "createdAt": 1771231934678,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "I was under the wrong impression when I started this project. I am not supposed to wrap the music.youtube.com site or youtube.com site, I am only allowed to use the iframe player. This changes the project so I will either have to strip out all the you tube stuff or show at least a small player at all times if playing anything from them. I took down the download link because I thought it was allowed in that version. I can do a picture in picture kind of thing but we will have to have our own links unless I curate and provide them, which doesn't sound like such a bad thing.",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "988f8457-d6f3-4573-8ac6-4fc691233c15",
       "createdAt": 1770745952890,
       "sticky": false,
