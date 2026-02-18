@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "2aa96485-19b7-400c-b604-8e12d1240694",
+      "createdAt": 1771426189281,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "I decided to not add any browser or iframe features at this time. I know lots of people the online music players but those sites don't like others wrapping their site and the DRM can make it very hard to pull off. This program is turning out more like a hard drive audio video toy. Should still be fun. I don't plan to make it very expensive anyway. Maybe like 10 USD or 15 with deals or something.",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "ccc9d06c-702d-403d-8f69-6feb64b3e628",
       "createdAt": 1771231934678,
       "sticky": false,
