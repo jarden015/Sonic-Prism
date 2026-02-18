@@ -23,7 +23,7 @@
       "blocks": [
         {
           "type": "text",
-          "text": "I decided to not add any browser or iframe features at this time. I know lots of people the online music players but those sites don't like others wrapping their site and the DRM can make it very hard to pull off. This program is turning out more like a hard drive audio video toy. Should still be fun. I don't plan to make it very expensive anyway. Maybe like 10 USD or 15 with deals or something.",
+          "text": "I decided to not add any browser or iframe features at this time. I know lots of people use online music players but those sites don't like others wrapping their site and the DRM can make it very hard to pull off. Also You Tube doesn't allow playing iframes in the background and has to show the iframe the entire play of it at least about 200px by 200px.<br><br>This program is turning out more like hard drive audio video toys. Should still be fun. I don't plan to make it very expensive anyway. Maybe like 10 USD or 15 with deals or something.",
           "rich": true
         }
       ]
