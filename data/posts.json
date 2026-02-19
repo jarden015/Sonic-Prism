@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "9f60dac4-c021-4f75-acaf-b0754632afdb",
+      "createdAt": 1771519864323,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Good news! I learned about GSMTC and SMTC, which is for sending the media functions (play, pause, next, etc.) cross app and registering my app as a Windows media player which allows it to receive Bluetooth headset buttons.<br><br>So now the global hotkeys should be able to control the big four (Spotify, YouTube Music, Apple Music, and Amazon Music) through the media keys and headset and be compliant with their terms.",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "2aa96485-19b7-400c-b604-8e12d1240694",
       "createdAt": 1771426189281,
       "sticky": false,
