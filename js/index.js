@@ -1,7 +1,7 @@
 (() => {
   document.documentElement.dataset.js = 'true';
 
-  // Gallery image sound handler with max 3 concurrent plays
+  // Gallery image sound handler with capped concurrent plays
   const galleryImages = document.querySelectorAll('.gallery-img[data-sound]');
   const volumeControl = document.getElementById('gallery-volume');
   const muteButton = document.getElementById('gallery-mute');
@@ -13,6 +13,10 @@
   const DEFAULT_HOVER_VOLUME = 0.7;
   let hoverVolume = DEFAULT_HOVER_VOLUME;
   let isHoverMuted = false;
+
+  function isPageInteractionActive() {
+    return document.visibilityState === 'visible' && document.hasFocus();
+  }
 
   function clampHoverVolume(raw) {
     const value = Number.parseFloat(String(raw));
@@ -109,6 +113,7 @@
 
   function playGallerySound(soundPath) {
     if (!soundPath) return;
+    if (!isPageInteractionActive()) return;
 
     pruneInactiveAudioPlayers();
 
@@ -135,10 +140,39 @@
     const loopState = activeHoverLoops.get(img);
     if (!loopState) return;
 
+    if (loopState.retryTimer != null) {
+      clearTimeout(loopState.retryTimer);
+      loopState.retryTimer = null;
+    }
+
+    if (!isPageInteractionActive() || !loopState.isHovering) {
+      if (loopState.audio) {
+        try {
+          loopState.audio.pause();
+          loopState.audio.currentTime = 0;
+        } catch {
+          // ignore
+        }
+        cleanupAudioPlayer(loopState.audio);
+        loopState.audio = null;
+      }
+      activeHoverLoops.delete(img);
+      return;
+    }
+
     pruneInactiveAudioPlayers();
 
     // Only play if we're under the cap
     if (activeAudioPlayers.size >= MAX_CONCURRENT_AUDIO) {
+      if (loopState.isHovering && loopState.retryTimer == null) {
+        loopState.retryTimer = setTimeout(() => {
+          const currentState = activeHoverLoops.get(img);
+          if (!currentState) return;
+          currentState.retryTimer = null;
+          runHoverLoopIteration(img);
+        }, 120);
+      }
+
       if (!loopState.isHovering) {
         activeHoverLoops.delete(img);
       }
@@ -184,10 +218,14 @@
 
   function startHoverLoopForImage(img) {
     if (!img) return;
+    if (!isPageInteractionActive()) return;
 
     const existingState = activeHoverLoops.get(img);
     if (existingState) {
       existingState.isHovering = true;
+      if (!existingState.audio && existingState.retryTimer == null) {
+        runHoverLoopIteration(img);
+      }
       return;
     }
 
@@ -197,7 +235,8 @@
     activeHoverLoops.set(img, {
       soundPath,
       isHovering: true,
-      audio: null
+      audio: null,
+      retryTimer: null
     });
 
     runHoverLoopIteration(img);
@@ -208,10 +247,60 @@
     if (!loopState) return;
 
     loopState.isHovering = false;
+    if (loopState.retryTimer != null) {
+      clearTimeout(loopState.retryTimer);
+      loopState.retryTimer = null;
+    }
     if (!loopState.audio) {
       activeHoverLoops.delete(img);
     }
   }
+
+  function stopAllGalleryAudio() {
+    for (const audio of activeAudioPlayers) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
+    activeAudioPlayers.clear();
+  }
+
+  function stopAllHoverLoops() {
+    for (const [img, loopState] of activeHoverLoops) {
+      loopState.isHovering = false;
+      if (loopState.retryTimer != null) {
+        clearTimeout(loopState.retryTimer);
+        loopState.retryTimer = null;
+      }
+      if (loopState.audio) {
+        try {
+          loopState.audio.pause();
+          loopState.audio.currentTime = 0;
+        } catch {
+          // ignore
+        }
+        cleanupAudioPlayer(loopState.audio);
+        loopState.audio = null;
+      }
+      activeHoverLoops.delete(img);
+    }
+  }
+
+  function handlePageInactive() {
+    stopAllHoverLoops();
+    stopAllGalleryAudio();
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') {
+      handlePageInactive();
+    }
+  });
+
+  window.addEventListener('blur', handlePageInactive);
 
   galleryImages.forEach(img => {
     img.style.cursor = 'pointer';
@@ -371,6 +460,10 @@
   let imgTween, textTween;
   let isHoveringWow = false;
 
+  function canTrackWowHover() {
+    return document.visibilityState === 'visible' && document.hasFocus();
+  }
+
   function startWowAnimations() {
     // Kill any existing tweens
     if (imgTween) imgTween.kill();
@@ -395,6 +488,14 @@
   }
 
   function updateWowHoverState(event) {
+    if (!canTrackWowHover()) {
+      if (isHoveringWow) {
+        isHoveringWow = false;
+        rewindWowAnimations();
+      }
+      return;
+    }
+
     const wowRect = wowImg.getBoundingClientRect();
     const magicRect = magicText.getBoundingClientRect();
 
@@ -416,6 +517,18 @@
 
   document.addEventListener('pointermove', updateWowHoverState, { passive: true });
   document.addEventListener('pointerleave', () => {
+    if (isHoveringWow) {
+      isHoveringWow = false;
+      rewindWowAnimations();
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' && isHoveringWow) {
+      isHoveringWow = false;
+      rewindWowAnimations();
+    }
+  });
+  window.addEventListener('blur', () => {
     if (isHoveringWow) {
       isHoveringWow = false;
       rewindWowAnimations();
@@ -446,7 +559,17 @@
     logoTween = gsap.to(logoImg, { rotation: 0, duration: 2, ease: "sine.inOut" });
   }
 
+  function stopLogoHoverAnimation() {
+    rewindLogoAnimation();
+  }
+
   // Add hover listeners to the logo
   logoImg.addEventListener('mouseenter', startLogoAnimation);
   logoImg.addEventListener('mouseleave', rewindLogoAnimation);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') {
+      stopLogoHoverAnimation();
+    }
+  });
+  window.addEventListener('blur', stopLogoHoverAnimation);
 })();

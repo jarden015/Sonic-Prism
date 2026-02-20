@@ -144,11 +144,9 @@
   }
 
   function formatTime(ts) {
-    try {
-      return new Date(ts).toLocaleString();
-    } catch {
-      return '';
-    }
+    const date = new Date(ts);
+    if (!Number.isFinite(date.getTime())) return '';
+    return date.toLocaleString();
   }
 
   function sanitizeRichTextHtml(raw) {
@@ -315,8 +313,13 @@
     }
 
     const time = document.createElement('time');
-    time.dateTime = new Date(post.createdAt).toISOString();
-    time.textContent = formatTime(post.createdAt);
+    const createdAtDate = new Date(post?.createdAt);
+    if (Number.isFinite(createdAtDate.getTime())) {
+      time.dateTime = createdAtDate.toISOString();
+      time.textContent = formatTime(createdAtDate.getTime());
+    } else {
+      time.textContent = '';
+    }
     meta.appendChild(time);
 
     if (post?.sticky === true) {
