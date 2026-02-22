@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "a22ebd8e-97c8-460e-9a79-13f0ac4b46de",
+      "createdAt": 1771726487829,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "I have added a function to mark a tab from Chrome, Edge, Firefox, and maybe more to my project. I also added a recall function that pops up the browser then switches to that tab. This will make it easy to pop up Spotify, YouTube Music, Apple Music, and Amazon Music if its in a browser tab. Since they don't allow wrapping their sites, this is the next best thing I could think of.",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "9f60dac4-c021-4f75-acaf-b0754632afdb",
       "createdAt": 1771519864323,
       "sticky": false,
