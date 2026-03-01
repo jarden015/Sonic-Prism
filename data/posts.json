@@ -16,6 +16,23 @@
       "stickyPosition": 1
     },
     {
+      "id": "0734e81e-4900-4562-8944-84abeb27af73",
+      "createdAt": 1772336348327,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "I ended up adding a nice mouse wheel top level window scroll feature and it can bind to the on off areas. It doesn't go to tab (was harder to implement than I thought) but if you have the desktop version of the music platforms that works perfect. Ill post a demo if you want to give it a try. There is no play on click, hard drive music, visualizers, or mouse over samples yet. Alot went into getting the bugs ironed out.",
+          "rich": true
+        },
+        {
+          "type": "iframe",
+          "src": "https://drive.google.com/file/d/1sccbXwhsjyhs5mlJCyCPZF9nuC2Jh976/preview"
+        }
+      ]
+    },
+    {
       "id": "a22ebd8e-97c8-460e-9a79-13f0ac4b46de",
       "createdAt": 1771726487829,
       "sticky": false,
