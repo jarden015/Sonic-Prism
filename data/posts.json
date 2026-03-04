@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "18b80968-501b-4645-b5b1-9e95937f887a",
+      "createdAt": 1772586165704,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "I had to learn, test, and restructure some things. The app will work best with desktop versions of media players. Previously it was You Tube Music only, so Im glad a upgrade is in.<br><br>There is a new quirk, there is no way, with code and being compliant, to make the player the active media player at one step. For a sync event it will have to be click button &gt; toast with button that prompts you to make your chosen media player active &gt; click toast after made active &gt; the next click should work to sync two.<br><br>I will give it a try and see what happens...",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "0734e81e-4900-4562-8944-84abeb27af73",
       "createdAt": 1772336348327,
       "sticky": false,
