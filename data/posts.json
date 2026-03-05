@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "b1682896-a7d2-4133-9da3-94f342be12d5",
+      "createdAt": 1772674405603,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Worked on bloom post processing today and it went well. Beautify doesnt allow to layer filter post processing of UI objects so I used threshold value.<br><br>I noticed echo will be out except for the hard drive music. That is driver level installing that I am no good at.<br><br>Tonight I will work on adding some decent samples to the site menu!",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "18b80968-501b-4645-b5b1-9e95937f887a",
       "createdAt": 1772586165704,
       "sticky": false,
