@@ -251,9 +251,7 @@
       clearTimeout(loopState.retryTimer);
       loopState.retryTimer = null;
     }
-    if (!loopState.audio) {
-      activeHoverLoops.delete(img);
-    }
+    activeHoverLoops.delete(img);
   }
 
   function stopAllGalleryAudio() {

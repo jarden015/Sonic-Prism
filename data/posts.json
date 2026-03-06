@@ -16,6 +16,19 @@
       "stickyPosition": 1
     },
     {
+      "id": "8cc8a4e4-0087-45ff-a90f-635b6c7535af",
+      "createdAt": 1772796703404,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "I got some other bug fixes in and it seems to be working very good so far. Stuff like instant menu setting, top right corner turns off main menu, no menu animations and no bloom settings.<br><br>Dissolve menu popped out since i reverted, I will do FX stuff later after core functionality.<br><br>The code is a bit messy but runs well. I only want to rewrite it in a version much later.<br><br>The main menu samples took me a bit longer than I thought. It was hard to pick.",
+          "rich": true
+        }
+      ]
+    },
+    {
       "id": "b1682896-a7d2-4133-9da3-94f342be12d5",
       "createdAt": 1772674405603,
       "sticky": false,
@@ -23,7 +36,7 @@
       "blocks": [
         {
           "type": "text",
-          "text": "Worked on bloom post processing today and it went well. Beautify doesnt allow to layer filter post processing of UI objects so I used threshold value.<br><br>I noticed echo will be out except for the hard drive music. That is driver level installing that I am no good at.<br><br>Tonight I will work on adding some decent samples to the site menu!",
+          "text": "Worked on bloom post processing today and it went well. Beautify doesnt allow to layer filter post processing of UI objects so I used its threshold value.<br><br>I noticed echo will be out except for the hard drive music. That is driver level installing code that I am no good at.<br><br>Tonight I will work on adding some decent samples to the site menu!",
           "rich": true
         }
       ]
