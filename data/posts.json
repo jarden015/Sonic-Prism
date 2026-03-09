@@ -16,6 +16,27 @@
       "stickyPosition": 1
     },
     {
+      "id": "7ae4e5b1-577e-488b-b336-f2189410a581",
+      "createdAt": 1773037257927,
+      "sticky": false,
+      "stickyPosition": null,
+      "blocks": [
+        {
+          "type": "text",
+          "text": "Added Copying player, artist, or song to clipboard and support for emojis and fancy fonts.",
+          "rich": true
+        },
+        {
+          "type": "image",
+          "src": "/assets/images/Example1.jpg"
+        },
+        {
+          "type": "image",
+          "src": "/assets/images/Example2.jpg"
+        }
+      ]
+    },
+    {
       "id": "8cc8a4e4-0087-45ff-a90f-635b6c7535af",
       "createdAt": 1772796703404,
       "sticky": false,
